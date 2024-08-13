@@ -1,8 +1,64 @@
+// Retrieve stored data or set defaults
 let academicMaps = JSON.parse(localStorage.getItem('academicMaps')) || { programs: [] };
 let programs = academicMaps.programs.map(p => p.name);
 const courseList = JSON.parse(localStorage.getItem('courseList')) ?? [];
 const electivesList = JSON.parse(localStorage.getItem('electivesList')) ?? {};
+function setViewMode(view) {
+    if (view === 'student') {
+        // Hide Admin tab
+        document.getElementById('homeTab').style.display = 'none';
 
+        // Hide create program inputs and buttons
+        document.getElementById('programInputContainer').style.display = 'none';
+
+        // Hide select year and course add panel
+        document.getElementById('course-add-container').style.display = 'none';
+
+        // Hide delete action buttons and make everything read-only
+        document.querySelectorAll('.btn-danger, .btn-sm').forEach(button => button.style.display = 'none');
+        document.querySelectorAll('input, select, textarea').forEach(input => {
+            if (input.id !== 'viewMode') {  // Exclude the viewMode dropdown from being disabled
+                input.disabled = true;
+            }
+        });
+
+        // Hide program delete buttons
+        document.querySelectorAll('.program-delete-btn').forEach(button => button.style.display = 'none');
+        
+    } else if (view === 'admin') {
+        // Show Admin tab
+        document.getElementById('homeTab').style.display = 'block';
+
+        // Show create program inputs and buttons
+        document.getElementById('programInputContainer').style.display = 'flex';
+
+        // Show select year and course add panel
+        document.getElementById('course-add-container').style.display = 'block';
+
+        // Show delete action buttons and enable input fields
+        document.querySelectorAll('.btn-danger, .btn-sm').forEach(button => button.style.display = 'inline-block');
+        document.querySelectorAll('input, select, textarea').forEach(input => input.disabled = false);
+
+        // Show program delete buttons
+        document.querySelectorAll('.program-delete-btn').forEach(button => button.style.display = 'inline-block');
+    }
+}
+
+// Add event listener to change the view when the user selects a different option
+document.addEventListener('DOMContentLoaded', function () {
+    fetchPrograms(); // Fetch and display programs first
+    const viewModeSelect = document.getElementById('viewMode');
+
+    viewModeSelect.addEventListener('change', function () {
+        const selectedView = this.value;
+        if (selectedView) {
+            setViewMode(selectedView);
+        }
+    });
+});
+
+
+// Function to display program navigation
 function displayProgramNavigation() {
     const programTabs = document.getElementById('programTabs');
     const programTabsContent = document.getElementById('programTabsContent');
@@ -14,7 +70,7 @@ function displayProgramNavigation() {
         tab.className = 'nav-item d-flex align-items-center';
         tab.innerHTML = `
             <a class="nav-link ${index === 0 ? 'active' : ''}" id="tab-${index}" data-toggle="tab" href="#content-${index}" role="tab" aria-controls="content-${index}" aria-selected="${index === 0 ? 'true' : 'false'}">${program}</a>
-            <button class="btn btn-danger btn-sm ml-2" onclick="deleteProgram('${program}')">X</button>
+            <button class="btn btn-danger btn-sm ml-2 program-delete-btn" onclick="deleteProgram('${program}')">X</button>
         `;
         tab.querySelector('a').addEventListener('click', () => {
             setTimeout(function () {
@@ -32,8 +88,13 @@ function displayProgramNavigation() {
         tabContent.setAttribute('aria-labelledby', `tab-${index}`);
         programTabsContent.appendChild(tabContent);
     });
+
+    // Ensure the view mode settings are applied after navigation is set up
+    const viewModeSelect = document.getElementById('viewMode');
+    setViewMode(viewModeSelect.value); // Reapply view mode settings
 }
 
+// Function to fetch and display programs
 function fetchPrograms() {
     const anyProgramsSaved = programs.length > 0;
     if (anyProgramsSaved) {
@@ -46,6 +107,7 @@ function fetchPrograms() {
     }
 }
 
+// Function to create a new program
 function createProgram() {
     const programName = document.getElementById('programInput').value.trim();
     if (programName && !programs.includes(programName)) {
@@ -68,6 +130,7 @@ function createProgram() {
     }
 }
 
+// Function to delete a program
 function deleteProgram(programName) {
     const programIndex = academicMaps.programs.findIndex(p => p.name === programName);
     if (programIndex !== -1) {
@@ -79,6 +142,7 @@ function deleteProgram(programName) {
     }
 }
 
+// Function to populate the course dropdown based on year and semester
 function populateCourseDropdown() {
     const yearSelect = document.getElementById('year-select');
     const semesterSelect = document.getElementById('semester-select');
@@ -92,8 +156,8 @@ function populateCourseDropdown() {
     }
 
     // Fetch the available courses
-    const allCourses = [...courseList, ...Object.values(electivesList).flat()];
-    
+    const allCourses = [...courseList, ...Object.values(electivesList).flat()]; // Include all courses
+
     courseSelect.innerHTML = '<option value="" disabled selected>Select Course</option>';
     allCourses.forEach(course => {
         const option = document.createElement('option');
@@ -103,6 +167,7 @@ function populateCourseDropdown() {
     });
 }
 
+// Function to add a course to the academic map
 function addCourseToAcademicMap() {
     const year = document.getElementById('year-select').value;
     const semester = document.getElementById('semester-select').value;
@@ -124,6 +189,6 @@ function addCourseToAcademicMap() {
     }
 }
 
+// Event listeners for the course dropdowns
 document.getElementById('year-select').addEventListener('change', populateCourseDropdown);
 document.getElementById('semester-select').addEventListener('change', populateCourseDropdown);
-document.addEventListener('DOMContentLoaded', fetchPrograms);
