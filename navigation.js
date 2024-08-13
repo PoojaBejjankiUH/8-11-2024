@@ -8,6 +8,8 @@ let academicMap = {
     3: { "semesterFall": [], "semesterSpring": [] }
 };
 
+
+
 document.addEventListener("DOMContentLoaded", function() {
     // Load courses and electives from local storage or fetch from the JSON file
     const storedCourses = localStorage.getItem('courseList');
@@ -148,6 +150,11 @@ function addCoursesToAcademicMap() {
     } else {
         alert("Program not found.");
     }
+     // Reset the form fields
+     document.getElementById('year-select').value = '';
+     document.getElementById('semester-select').value = '';
+     document.getElementById('course-select').value = '';
+
 }
 function updateLocalStorage() {
     localStorage.setItem('courseList', JSON.stringify(courses));
@@ -157,25 +164,20 @@ function updateLocalStorage() {
 function updateCourseDropdown() {
     const courseSelect = document.getElementById('course-select');
     courseSelect.innerHTML = '<option value="" disabled selected>Select Course</option>';
-    const programName = document.getElementsByClassName('nav-link active')[0]?.innerText;
-    if (programName && programAcademicMap[`${programName}`]) {
-        academicMap = programAcademicMap[`${programName}`];
-    }
-    // Get all added courses
-    const addedCourses = new Set();
-    for (let year in academicMap) {
-        for (let semester in academicMap[year]) {
-            academicMap[year][semester].forEach(courseCode => addedCourses.add(courseCode));
-        }
-    }
-    // Populate dropdown excluding already added courses
+
+    // Populate dropdown including all courses (no filtering)
     courses.forEach(course => {
-        if (!addedCourses.has(course.courseCode)) {
-            const option = document.createElement('option');
-            option.value = course.courseCode;
-            option.textContent = `${course.courseCode}: ${course.courseName}`;
-            courseSelect.appendChild(option);
-        }
+        const option = document.createElement('option');
+        option.value = course.courseCode;
+        option.textContent = `${course.courseCode}: ${course.courseName}`;
+        courseSelect.appendChild(option);
+    });
+
+    Object.values(electives).flat().forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.courseCode;
+        option.textContent = `${course.courseCode}: ${course.courseName}`;
+        courseSelect.appendChild(option);
     });
 }
 function displayAcademicMap() {
@@ -241,7 +243,7 @@ function displayAcademicMap() {
                             <td><a href="#" class="course-link" data-course-code="${course.courseCode}">${course.courseName}</a></td>
                             <td>${course.credits}</td>
                             <td><button class="btn btn-danger btn-sm" onclick="deleteCourseAcademicMap('${year}', '${semester}', '${course.courseCode}')">Delete</button></td>`;
-                        fallCredits += course.credits;
+                        fallCredits += parseInt(course.credits);
                     } else {
                         row.innerHTML = `
                             <td><a href="#" class="course-link" data-course-code="${course.courseCode}">${course.courseCode}</a></td>
@@ -249,9 +251,9 @@ function displayAcademicMap() {
                             <td>${course.credits}</td>
                             <td></td> <!-- Placeholder for total credits row later -->
                             <td><button class="btn btn-danger btn-sm" onclick="deleteCourseAcademicMap('${year}', '${semester}', '${course.courseCode}')">Delete</button></td>`;
-                        springCredits += course.credits;
+                        springCredits += parseInt(course.credits);
                     }
-                    semesterCredits += course.credits;
+                    semesterCredits += parseInt(course.credits);
                     tbody.appendChild(row);
                 }
             });
@@ -263,7 +265,7 @@ function displayAcademicMap() {
                                       <td></td>`;
             } else {
                 const totalYearCredits = fallCredits + springCredits;
-                totalRow.innerHTML = `<td colspan="3"><strong>Spring Total Credits</strong></td>
+                totalRow.innerHTML = `<td colspan="2"><strong>Spring Total Credits</strong></td>
                                       <td><strong>${springCredits}</strong></td>
                                       <td><strong>${totalYearCredits}</strong></td>`;
             }
